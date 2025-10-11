@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KankaMarket - 20 Özellikli Nihai E-Ticaret Simülasyonu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS KODLARI BURADA --- */
+        :root {
+            --primary-color: #f27a1a;
+            --secondary-color: #2c3e50;
+            --background-color: #f5f5f5;
+            --card-bg-color: #ffffff;
+            --text-color: #333;
+            --gray-color: #aaa;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --discount-color: #c0392b; 
+        }
+
+        /* 15. ÖZELLİK: GLOBAL SIFIRLAMA ve LAYOUT DÜZELTMELERİ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            overflow-x: hidden; 
+            width: 100%;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* HEADER & AYARLAR */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: var(--card-bg-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); }
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+
+        /* KONTROL ÇUBUĞU */
+        .controls-bar {
+            background-color: var(--card-bg-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 100%;
+            gap: 15px; 
+            flex-wrap: wrap; 
+        }
+        .controls-bar .filters, .controls-bar .sorting {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* ÜRÜN KARTLARI (Stok ve İndirim Stilleri) */
+        .product-card {
+            background: var(--card-bg-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .product-image-container img { height: 280px; object-fit: cover; width: 100%; }
+        .product-price { 
+            font-size: 1.4rem; font-weight: 700; color: var(--primary-color); margin-bottom: 15px; margin-top: auto;
+            display: flex; align-items: baseline; gap: 10px;
+        }
+        .old-price {
+            text-decoration: line-through;
+            color: var(--gray-color);
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+        .stock-out { 
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .stock-out .add-to-cart-btn {
+            background-color: var(--error-color) !important;
+            cursor: not-allowed;
+        }
+        .stock-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--error-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 50;
+        }
+        .add-to-cart-btn.added { background-color: var(--success-color); }
+        
+        /* MODALLAR (Görüntülenme Düzeltmeleri) */
+        #cart-sidebar {
+            position: fixed; top: 0; right: 0; height: 100%; width: 380px; background: white;
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1); z-index: 1001; transform: translateX(100%);
+            transition: transform 0.3s ease-in-out; padding: 20px; display: flex; flex-direction: column;
+        }
+        #cart-sidebar.open { transform: translateX(0); }
+        #cart-items { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
+
+        #settings-menu {
+            position: fixed; top: 70px; right: 20px; width: 250px; background: var(--card-bg-color);
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); z-index: 1000; padding: 20px;
+            transform: scale(0.9); opacity: 0; pointer-events: none; transition: all 0.3s ease;
+        }
+        #settings-menu.open { transform: scale(1); opacity: 1; pointer-events: auto; }
+        
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5);
+            z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        #overlay.open { opacity: 1; pointer-events: auto; }
+
+        #product-modal, #listing-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -55%) scale(0.9);
+            background: white; z-index: 1003; width: 90%; max-width: 800px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #product-modal.open, #listing-modal.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+        #listing-modal { max-width: 500px; } 
+
+        /* Mobil Uyumluluk */
+        @media (max-width: 768px) {
+            #cart-sidebar { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">KankaMarket</div>
+        <div class="header-actions">
+            <button class="settings-button" id="open-settings-btn" title="Ayarlar">
+                <i class="fa-solid fa-user-gear"></i>
+            </button>
+            <button class="cart-button" id="open-cart-btn">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span id="cart-count">0</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <input type="text" id="search-input" placeholder="Ürün ara..." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; max-width: 300px;">
+            <button class="add-listing-btn" id="open-listing-modal-btn" style="margin-left: 15px;">
+                <i class="fa-solid fa-plus"></i> Yeni İlan Ver
+            </button>
+        </div>
+
+        <div class="controls-bar">
+            <div class="filters">
+                <label for="min-rating" style="font-weight: 600;">Minimum Puan:</label>
+                <select id="min-rating">
+                    <option value="0">Tümü</option>
+                    <option value="4.5">4.5 ve Üstü</option>
+                    <option value="4.0">4.0 ve Üstü</option>
+                </select>
+            </div>
+            <div class="sorting">
+                <label for="sort-by" style="font-weight: 600;">Sırala:</label>
+                <select id="sort-by">
+                    <option value="default">Varsayılan</option>
+                    <option value="price-asc">Fiyat (En Düşük)</option>
+                    <option value="price-desc">Fiyat (En Yüksek)</option>
+                    <option value="rating-desc">Puan (En Yüksek)</option>
+                </select>
+            </div>
+            <button id="filter-favorites-btn" style="background-color: var(--secondary-color); color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">
+                <i class="fa-solid fa-heart"></i> Favorileri Göster
+            </button>
+        </div>
+
+        <div id="product-grid">
+            </div>
+        
+        <p id="no-products-message" style="text-align: center; color: var(--gray-color); margin-top: 50px; font-size: 1.2rem; display: none;">
+            Aradığınız kriterlere uygun ürün bulunamadı.
+        </p>
+    </main>
+
+    <aside id="cart-sidebar">
+        <div class="cart-header">
+            <h2>Sepetim</h2>
+            <button id="close-cart-btn">&times;</button>
+        </div>
+        <div id="cart-items">
+            </div>
+        <div class="cart-footer">
+            <div id="discount-alert" style="color: var(--discount-color); font-weight: 600; margin-bottom: 5px; display: none;">
+                Sepet İndirimi: <span id="cart-discount-amount">0.00 TL</span>
+            </div>
+            <div class="cart-total">
+                <span>Toplam:</span>
+                <span id="cart-total-price">0.00 TL</span>
+            </div>
+            <button class="checkout-btn">Güvenli Ödeme</button>
+        </div>
+    </aside>
+
+    <div id="settings-menu">
+        <h3>Kullanıcı Ayarları</h3>
+        <ul>
+            <li id="account-info-li"><a href="#"><i class="fa-solid fa-user"></i> <span id="account-info-text">Hesap Bilgileri</span></a></li>
+            <li><a href="#" onclick="showToast('Favorilerim listesi açıldı (Simülasyon)', 'default');"><i class="fa-solid fa-heart"></i> <span id="favorites-link-text">Favorilerim (0)</span></a></li>
+            <li id="toggle-sound">
+                <i class="fa-solid fa-bell"></i> Ses Efektleri: <span id="sound-status">Açık</span>
+            </li>
+            <li id="logout-login-li"><a href="#"><i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap</a></li>
+        </ul>
+        <button class="close-settings-btn">&times;</button>
+    </div>
+
+    <div id="overlay"></div>
+    <div id="product-modal">
+        <button id="close-modal-btn">&times;</button>
+        <div id="modal-content" style="padding: 30px; display: flex; gap: 20px;">
+            <div id="modal-image" style="flex-shrink: 0;"><img src="" alt="Ürün Resmi" style="width: 300px; height: auto; border-radius: 8px;"></div>
+            <div id="modal-info">
+                <h2 id="modal-name"></h2>
+                <p id="modal-description" style="margin-top: 15px;"></p>
+                <div id="modal-price" style="margin-top: 20px; font-size: 1.6rem; color: var(--primary-color); font-weight: 700;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="listing-modal">
+        <button id="close-listing-modal-btn">&times;</button>
+        <div class="modal-content" style="padding: 30px;">
+            <h2>Yeni İlan Oluştur</h2>
+            <form id="new-listing-form" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="text" id="listing-name" placeholder="Ürün Adı" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <textarea id="listing-description" placeholder="Ürün Açıklaması (Minimum 50 karakter)" required minlength="50" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
+                <input type="number" id="listing-price" placeholder="Fiyat (TL)" step="0.01" min="1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="url" id="listing-image" placeholder="Resim URL'si" id="listing-image-input" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <img id="image-preview" src="" alt="Resim Önizleme">
+                <button type="submit" class="checkout-btn" style="background-color: var(--primary-color);">İlanı Yayınla</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toast-notification"></div>
+    
+    <script>
+        // --- JAVASCRIPT KODLARI BURADA ---
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- VERİ (STATE) ve LOCAL STORAGE ---
+            let initialProducts = [
+                { id: 1, name: 'Vintage Deri Ceket', price: 680.00, priceBeforeDiscount: 850.00, image: 'https://picsum.photos/400/400?random=1', rating: 4.8, reviewCount: 125, description: 'Soğuk havalar için özel olarak tasarlanmış, %100 gerçek deriden üretilmiş klasik ve zamansız bir ceket.', stock: 15 },
+                { id: 2, name: 'Minimalist Kol Saati', price: 1200.50, priceBeforeDiscount: null, image: 'https://picsum.photos/400/400?random=2', rating: 4.9, reviewCount: 210, description: 'Paslanmaz çelik kasası ve sade tasarımı ile her tarza uyum sağlayan, şık ve modern bir kol saati.', stock: 5 },
+                { id: 3, name: 'Kablosuz Bluetooth Kulaklık', price: 475.00, priceBeforeDiscount: null, image: 'https://picsum.photos/400/400?random=3', rating: 4.6, reviewCount: 350, description: 'Yüksek ses kalitesi ve uzun pil ömrü sunan, aktif gürültü engelleme özellikli kablosuz kulaklık.', stock: 0 },
+                { id: 4, name: 'Organik Pamuk T-Shirt', price: 250.00, priceBeforeDiscount: null, image: 'https://picsum.photos/400/400?random=4', rating: 4.7, reviewCount: 88, description: 'Nefes alabilen organik pamuk kumaştan üretilmiş, her mevsim giyilebilecek basic bir t-shirt.', stock: 30 },
+                { id: 5, name: 'Profesyonel Koşu Ayakkabısı', price: 980.75, priceBeforeDiscount: 1250.00, image: 'https://picsum.photos/400/400?random=5', rating: 4.9, reviewCount: 192, description: 'Esnek tabanı ve hafif yapısıyla performansınızı en üst seviyeye taşıyacak profesyonel spor ayakkabısı.', stock: 8 },
+                { id: 6, name: 'Akıllı Ev Asistanı', price: 650.00, priceBeforeDiscount: null, image: 'https://picsum.photos/400/400?random=6', rating: 4.5, reviewCount: 412, description: 'Sesli komutlarla müziğinizi kontrol edin, sorular sorun ve akıllı ev cihazlarınızı yönetin.', stock: 22 },
+            ];
+            
+            let products = JSON.parse(localStorage.getItem('kankaMarketProducts')) || initialProducts;
+            let cart = JSON.parse(localStorage.getItem('kankaMarketCart')) || [];
+            let favorites = JSON.parse(localStorage.getItem('kankaMarketFavorites')) || [];
+            let isSoundEnabled = JSON.parse(localStorage.getItem('kankaMarketSound')) ?? true; 
+            let isLoggedIn = JSON.parse(localStorage.getItem('kankaMarketLoggedIn')) || false;
+            let userName = localStorage.getItem('kankaMarketUserName') || 'Misafir';
+            let isFilteringFavorites = false;
+
+
+            // --- ELEMENT SEÇİMLERİ ---
+            const productGrid = document.getElementById('product-grid');
+            const cartCountElement = document.getElementById('cart-count');
+            const cartSidebar = document.getElementById('cart-sidebar');
+            const overlay = document.getElementById('overlay');
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartTotalPriceElement = document.getElementById('cart-total-price');
+            const productModal = document.getElementById('product-modal');
+            const toastElement = document.getElementById('toast-notification');
+            const noProductsMessage = document.getElementById('no-products-message');
+            const filterFavoritesBtn = document.getElementById('filter-favorites-btn'); 
+            const cartDiscountAlert = document.getElementById('discount-alert'); 
+            const cartDiscountAmount = document.getElementById('cart-discount-amount'); 
+            const listingImageInput = document.getElementById('listing-image'); 
+            const imagePreview = document.getElementById('image-preview'); 
+            
+            const minRatingSelect = document.getElementById('min-rating');
+            const sortBySelect = document.getElementById('sort-by');
+            const searchInput = document.getElementById('search-input');
+            const settingsMenu = document.getElementById('settings-menu');
+            const openSettingsBtn = document.getElementById('open-settings-btn');
+            const closeSettingsBtn = document.querySelector('#settings-menu .close-settings-btn');
+            const toggleSoundLi = document.getElementById('toggle-sound');
+            const soundStatusSpan = document.getElementById('sound-status');
+            const favoritesLinkText = document.getElementById('favorites-link-text');
+            const accountInfoText = document.getElementById('account-info-text');
+            const openListingModalBtn = document.getElementById('open-listing-modal-btn');
+            const listingModal = document.getElementById('listing-modal');
+            const newListingForm = document.getElementById('new-listing-form');
+            const logoutLoginLi = document.getElementById('logout-login-li');
+
+
+            // --- YARDIMCI FONKSİYONLAR ---
+
+            function saveState() {
+                localStorage.setItem('kankaMarketProducts', JSON.stringify(products)); 
+                localStorage.setItem('kankaMarketCart', JSON.stringify(cart));
+                localStorage.setItem('kankaMarketFavorites', JSON.stringify(favorites));
+                localStorage.setItem('kankaMarketSound', isSoundEnabled);
+            }
+
+            function playAddToCartSound() {
+                if (isSoundEnabled) {
+                    console.log("DING! Ürün sepete eklendi ses efekti çalındı.");
+                }
+            }
+
+            // TOAST BİLDİRİMİ GÖSTER 
+            window.showToast = function(message, type = 'default') { // Global erişim için window'a bağlandı
+                toastElement.textContent = message;
+                toastElement.classList.remove('success', 'error'); 
+
+                if (type === 'success') {
+                    toastElement.classList.add('success');
+                } else if (type === 'error') {
+                    toastElement.classList.add('error');
+                }
+                
+                toastElement.classList.add('show');
+
+                setTimeout(() => {
+                    toastElement.classList.remove('show');
+                }, 3000);
+            }
+            
+            function updateSoundStatus() {
+                soundStatusSpan.textContent = isSoundEnabled ? 'Açık' : 'Kapalı';
+            }
+
+            function updateFavoritesCount() {
+                favoritesLinkText.textContent = `Favorilerim (${favorites.length})`;
+            }
+
+            // ÇALIŞMAYAN KODUN TAMAMLAMASI: Ayarlar Menüsünü Güncelleme
+            function updateSettingsMenu() {
+                accountInfoText.textContent = `${userName}`;
+
+                if (isLoggedIn) {
+                    logoutLoginLi.innerHTML = `<a href="#"><i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap</a>`;
+                } else {
+                    logoutLoginLi.innerHTML = `<a href="#"><i class="fa-solid fa-arrow-right-to-bracket"></i> Giriş Yap / Kayıt Ol</a>`;
+                }
+            }
+            
+            // ÇALIŞMAYAN KODUN TAMAMLAMASI: Oturum Durumunu Değiştirme
+            function toggleLoginState() {
+                if (isLoggedIn) {
+                    isLoggedIn = false;
+                    userName = 'Misafir';
+                    showToast("Başarıyla çıkış yaptınız.", 'success');
+                } else {
+                    const inputName = prompt("Lütfen kullanıcı adınızı girin:", "Kanka");
+                    if (inputName && inputName.trim() !== '') {
+                        isLoggedIn = true;
+                        userName = inputName.trim().substring(0, 20);
+                        showToast(`Hoş geldiniz, ${userName}!`, 'success');
+                    } else {
+                        return;
+                    }
+                }
+                
+                localStorage.setItem('kankaMarketLoggedIn', isLoggedIn);
+                localStorage.setItem('kankaMarketUserName', userName);
+
+                updateSettingsMenu();
+                settingsMenu.classList.remove('open');
+                openListingModalBtn.style.display = isLoggedIn ? 'block' : 'none';
+            }
+            
+            // ÇALIŞMAYAN KODUN TAMAMLAMASI: Modal Açma/Kapatma
+            function toggleModal(element, isOpen) {
+                if (isOpen) {
+                    element.classList.add('open');
+                    overlay.classList.add('open');
+                } else {
+                    element.classList.remove('open');
+                    // Hiçbir modal/sidebar açıksa overlay'i kapatma
+                    if (!cartSidebar.classList.contains('open') && !productModal.classList.contains('open') && !listingModal.classList.contains('open') && !settingsMenu.classList.contains('open')) {
+                        overlay.classList.remove('open');
+                    }
+                }
+            }
+
+
+            // --- ANA İŞLEV FONKSİYONLARI ---
+
+            function displayProducts() { 
+                let filteredProducts = [...products];
+                const searchText = searchInput.value.toLowerCase(); 
+
+                // 1. Favori Filtresi
+                if (isFilteringFavorites) {
+                    filteredProducts = filteredProducts.filter(p => favorites.includes(p.id));
+                    filterFavoritesBtn.style.backgroundColor = 'var(--primary-color)';
+                } else {
+                    filterFavoritesBtn.style.backgroundColor = 'var(--secondary-color)';
+                }
+
+                // 2. Arama Filtresi
+                if (searchText) {
+                    filteredProducts = filteredProducts.filter(p => 
+                        p.name.toLowerCase().includes(searchText) || p.description.toLowerCase().includes(searchText)
+                    );
+                }
+
+                // 3. Puan Filtresi
+                const minRating = parseFloat(minRatingSelect.value);
+                if (minRating > 0) {
+                    filteredProducts = filteredProducts.filter(p => p.rating >= minRating);
+                }
+
+                // 4. Sıralama
+                const sortValue = sortBySelect.value;
+                switch (sortValue) {
+                    case 'price-asc':
+                        filteredProducts.sort((a, b) => a.price - b.price);
+                        break;
+                    case 'price-desc':
+                        filteredProducts.sort((a, b) => b.price - a.price);
+                        break;
+                    case 'rating-desc':
+                        filteredProducts.sort((a, b) => b.rating - a.rating);
+                        break;
+                    case 'default':
+                    default:
+                        filteredProducts.sort((a, b) => b.id - a.id); 
+                        break;
+                }
+                
+                // 5. RENDER
+                if (filteredProducts.length === 0) {
+                    productGrid.innerHTML = '';
+                    noProductsMessage.style.display = 'block';
+                } else {
+                    productGrid.innerHTML = filteredProducts.map(product => {
+                        const isFavorited = favorites.includes(product.id) ? 'favorited' : '';
+                        const isStockOut = product.stock <= 0; 
+                        
+                        const priceHtml = product.priceBeforeDiscount ? 
+                            `<span class="old-price">${product.priceBeforeDiscount.toFixed(2)} TL</span> ${product.price.toFixed(2)} TL` :
+                            `${product.price.toFixed(2)} TL`;
+
+                        return `
+                            <div class="product-card ${isStockOut ? 'stock-out' : ''}">
+                                ${isStockOut ? '<div class="stock-badge">Stok Tükendi</div>' : ''}
+                                <div class="product-image-container" data-id="${product.id}">
+                                    <img src="${product.image}" alt="${product.name}">
+                                    <button class="favorite-btn ${isFavorited}" data-id="${product.id}">
+                                        <i class="fa-solid fa-heart"></i>
+                                    </button>
+                                </div>
+                                <div class="product-info">
+                                    <h3 class="product-name">${product.name} ${product.isNew ? '<span style="color: var(--success-color); font-size: 0.9em;">(Yeni!)</span>' : ''}</h3>
+                                    <div class="product-rating">
+                                        <span class="stars">
+                                            <i class="fa-solid fa-star"></i> ${product.rating}
+                                        </span>
+                                        | <span>(${product.reviewCount} Değerlendirme)</span>
+                                    </div>
+                                    <div class="product-price">${priceHtml}</div>
+                                    <button class="add-to-cart-btn" data-id="${product.id}">
+                                        ${isStockOut ? 'Tükendi' : 'Sepete Ekle'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    noProductsMessage.style.display = 'none';
+                }
+            }
+
+            function renderCart() {
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = '<p style="text-align: center; color: var(--gray-color); margin-top: 50px;">Sepetinizde ürün bulunmamaktadır.</p>';
+                } else {
+                    cartItemsContainer.innerHTML = cart.map(item => `
+                        <div class="cart-item" style="display: flex; gap: 10px; border-bottom: 1px solid #eee; padding: 10px 0;">
+                            <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                            <div class="cart-item-info" style="flex-grow: 1;">
+                                <div class="cart-item-name" style="font-weight: 600;">${item.name}</div>
+                                <div class="cart-item-price">${item.price.toFixed(2)} TL</div>
+                                <div class="cart-item-quantity">
+                                    <button class="quantity-btn decrease" data-id="${item.id}">-</button>
+                                    <span class="quantity-value">${item.quantity}</span>
+                                    <button class="quantity-btn increase" data-id="${item.id}" ${item.quantity >= item.stock ? 'disabled' : ''}>+</button>
+                                </div>
+                            </div>
+                            <button class="remove-from-cart-btn" data-id="${item.id}" style="background: none; border: none; color: var(--error-color); cursor: pointer;">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+
+
+                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                cartCountElement.textContent = totalItems;
+
+                let subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                let discountAmount = 0;
+                
+                // İndirim hesaplama
+                if (totalItems >= 1) { // 1 üründen fazla varsa indirimli ürünlerden yapılan indirimi hesapla
+                    discountAmount = cart.reduce((sum, item) => {
+                        if (item.priceBeforeDiscount) {
+                            return sum + (item.priceBeforeDiscount - item.price) * item.quantity;
+                        }
+                        return sum;
+                    }, 0);
+                }
+                
+                const finalPrice = subtotal - discountAmount;
+
+                if (discountAmount > 0) {
+                    cartDiscountAlert.style.display = 'block';
+                    cartDiscountAmount.textContent = `${discountAmount.toFixed(2)} TL`;
+                    cartTotalPriceElement.textContent = `${(subtotal - discountAmount).toFixed(2)} TL`; 
+                    // Normalde FinalPrice gösterilir.
+                } else {
+                    cartDiscountAlert.style.display = 'none';
+                    cartTotalPriceElement.textContent = `${subtotal.toFixed(2)} TL`;
+                }
+            }
+
+            function addToCart(productId) {
+                const product = products.find(p => p.id === productId);
+                const existingItem = cart.find(item => item.id === productId);
+
+                if (product.stock <= 0) {
+                    showToast(`${product.name} stokta kalmadı!`, 'error');
+                    return;
+                }
+
+                if (existingItem) {
+                    if (existingItem.quantity < product.stock) {
+                        existingItem.quantity++;
+                    } else {
+                        showToast(`Maksimum stok (${product.stock}) sınırına ulaşıldı.`, 'error');
+                        return;
+                    }
+                } else {
+                    cart.push({ ...product, quantity: 1, stock: product.stock }); // Stok bilgisini sepete ekle
+                }
+                
+                playAddToCartSound();
+                showToast(`${product.name} sepete eklendi!`, 'success'); 
+                saveState();
+                renderCart();
+            }
+
+            function toggleFavorite(productId, buttonElement) {
+                const product = products.find(p => p.id === productId);
+                if (favorites.includes(productId)) {
+                    favorites = favorites.filter(id => id !== productId);
+                    buttonElement.classList.remove('favorited');
+                    showToast(`${product.name} favorilerden çıkarıldı.`, 'error'); 
+                } else {
+                    favorites.push(productId);
+                    buttonElement.classList.add('favorited');
+                    showToast(`${product.name} favorilere eklendi!`, 'success'); 
+                }
+                saveState();
+                updateFavoritesCount();
+                if (isFilteringFavorites) { // Favori filtresi açıksa listeyi güncelle
+                    displayProducts();
+                }
+            }
+            
+            function changeQuantity(productId, change) {
+                const item = cart.find(i => i.id === productId);
+
+                if (item) {
+                    if (change > 0 && item.quantity >= item.stock) {
+                        showToast(`Maksimum stok (${item.stock}) sınırına ulaşıldı.`, 'error');
+                        return;
+                    }
+
+                    item.quantity += change;
+
+                    if (item.quantity <= 0) {
+                        removeFromCart(productId);
+                    } else {
+                        saveState();
+                        renderCart();
+                    }
+                }
+            }
+            
+            function removeFromCart(productId) {
+                const product = cart.find(i => i.id === productId);
+                cart = cart.filter(item => item.id !== productId);
+                showToast(`${product.name} sepetten kaldırıldı.`, 'error'); 
+                saveState();
+                renderCart();
+            }
+
+
+            // --- OLAY DİNLEYİCİLERİ (EVENT LISTENERS) ---
+            
+            // Favori Filtreleme Butonu
+            filterFavoritesBtn.addEventListener('click', () => {
+                isFilteringFavorites = !isFilteringFavorites;
+                filterFavoritesBtn.textContent = isFilteringFavorites ? 
+                    'Tüm Ürünleri Göster' : 
+                    `Favorileri Göster (${favorites.length})`;
+                displayProducts();
+            });
+
+            // Ürün Grid'i Eylemleri
+            productGrid.addEventListener('click', e => {
+                const target = e.target;
+                const closestCard = target.closest('[data-id]');
+                const productId = parseInt(closestCard?.dataset.id);
+
+                if (!productId) return;
+
+                if (target.closest('.add-to-cart-btn')) {
+                    addToCart(productId);
+                    target.textContent = 'Eklendi!';
+                    target.classList.add('added');
+                    setTimeout(() => {
+                        target.textContent = 'Sepete Ekle';
+                        target.classList.remove('added');
+                    }, 1500);
+                } 
+                else if (target.closest('.favorite-btn')) {
+                    toggleFavorite(productId, target.closest('.favorite-btn'));
+                }
+                else if (target.closest('.product-image-container')) {
+                    const product = products.find(p => p.id === productId); 
+                    document.querySelector('#modal-image img').src = product.image;
+                    document.getElementById('modal-name').textContent = product.name;
+                    document.getElementById('modal-description').textContent = product.description;
+                    document.getElementById('modal-price').textContent = `${product.price.toFixed(2)} TL`;
+                    toggleModal(productModal, true);
+                }
+            });
+
+            // Sepet Eylemleri (Miktar ve Silme)
+            cartItemsContainer.addEventListener('click', e => {
+                const target = e.target;
+                
+                if (target.closest('.remove-from-cart-btn')) {
+                    const productId = parseInt(target.closest('.remove-from-cart-btn').dataset.id);
+                    removeFromCart(productId);
+                }
+                
+                const quantityBtn = target.closest('.quantity-btn');
+                if (quantityBtn) {
+                    const productId = parseInt(quantityBtn.dataset.id);
+                    if (quantityBtn.classList.contains('increase')) {
+                        changeQuantity(productId, 1);
+                    } else if (quantityBtn.classList.contains('decrease')) {
+                        changeQuantity(productId, -1);
+                    }
+                }
+            });
+
+            // Filtreleme/Sıralama/Arama Olayları
+            minRatingSelect.addEventListener('change', displayProducts);
+            sortBySelect.addEventListener('change', displayProducts);
+            searchInput.addEventListener('input', displayProducts);
+
+            // Modal Açma/Kapatma
+            document.getElementById('open-cart-btn').addEventListener('click', () => {
+                toggleModal(cartSidebar, true);
+                settingsMenu.classList.remove('open');
+            });
+            document.getElementById('close-cart-btn').addEventListener('click', () => toggleModal(cartSidebar, false));
+            document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal(productModal, false));
+            document.getElementById('close-listing-modal-btn').addEventListener('click', () => toggleModal(listingModal, false));
+
+            // Ayarlar Menüsü Aç/Kapa
+            openSettingsBtn.addEventListener('click', () => {
+                settingsMenu.classList.toggle('open');
+                cartSidebar.classList.remove('open');
+                overlay.classList.toggle('open', settingsMenu.classList.contains('open'));
+            });
+            closeSettingsBtn.addEventListener('click', () => toggleModal(settingsMenu, false));
+            
+            // Oturum Açma/Kapatma
+            logoutLoginLi.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleLoginState();
+            });
+
+            // Ses Efekti Aç/Kapa
+            toggleSoundLi.addEventListener('click', () => {
+                isSoundEnabled = !isSoundEnabled;
+                updateSoundStatus();
+                saveState();
+                showToast(`Ses Efektleri: ${isSoundEnabled ? 'AÇIK' : 'KAPALI'}`, 'default');
+            });
+
+            // İlan Verme Modal Aç/Kapa
+            openListingModalBtn.addEventListener('click', () => {
+                if (!isLoggedIn) {
+                    showToast("İlan verebilmek için lütfen önce giriş yapın.", 'error');
+                    toggleModal(settingsMenu, true);
+                    return;
+                }
+                toggleModal(listingModal, true);
+                settingsMenu.classList.remove('open');
+            });
+
+            // Yeni İlan Ekleme Formu Dinleyicisi
+            newListingForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const price = parseFloat(document.getElementById('listing-price').value);
+                if (isNaN(price) || price <= 0) {
+                    showToast("Lütfen geçerli bir fiyat giriniz.", 'error');
+                    return;
+                }
+
+                const newProduct = {
+                    id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
+                    name: document.getElementById('listing-name').value,
+                    price: price,
+                    priceBeforeDiscount: null, 
+                    image: document.getElementById('listing-image').value,
+                    rating: 5.0, 
+                    reviewCount: 0,
+                    description: document.getElementById('listing-description').value,
+                    isNew: true,
+                    stock: 99 
+                };
+
+                products.unshift(newProduct);
+                showToast(`"${newProduct.name}" ilanınız başarıyla yayınlandı!`, 'success');
+                toggleModal(listingModal, false);
+                saveState();
+                displayProducts();
+                newListingForm.reset();
+                imagePreview.style.display = 'none';
+            });
+
+            // Resim Önizleme 
+            listingImageInput.addEventListener('input', () => {
+                const url = listingImageInput.value;
+                if (url && (url.startsWith('http') || url.startsWith('data'))) {
+                    imagePreview.src = url;
+                    imagePreview.style.display = 'block';
+                } else {
+                    imagePreview.style.display = 'none';
+                    imagePreview.src = '';
+                }
+            });
+
+            // Overlay Tıklaması
+            overlay.addEventListener('click', () => {
+                toggleModal(cartSidebar, false);
+                toggleModal(productModal, false);
+                toggleModal(listingModal, false);
+                toggleModal(settingsMenu, false);
+            });
+
+            // Güvenli Ödeme Butonu
+            document.querySelector('.checkout-btn').addEventListener('click', () => {
+                if (cart.length === 0) {
+                    showToast("Ödeme yapabilmek için sepetinizde ürün olmalı.", 'error');
+                    return;
+                }
+                showToast("Ödeme sayfasına yönlendiriliyorsunuz...", 'default');
+                setTimeout(() => {
+                    alert(`Tebrikler, siparişiniz başarıyla alındı! Toplam tutar: ${cartTotalPriceElement.textContent}.\nBu bir simülasyondur.`);
+                    cart = [];
+                    saveState();
+                    renderCart();
+                    toggleModal(cartSidebar, false);
+                }, 2000);
+            });
+
+
+            // --- İLK ÇALIŞTIRMA ---
+            displayProducts();
+            renderCart();
+            updateSoundStatus();
+            updateFavoritesCount();
+            updateSettingsMenu();
+            openListingModalBtn.style.display = isLoggedIn ? 'block' : 'none';
+
+        });
+    </script>
+</body>
+</html>
