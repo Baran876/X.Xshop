@@ -1,17 +1,28 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>HACK TEAM</title>
+<html lang="tr"><head><meta charset="UTF-8"><title>HACK TEAM</title>
 <style>
-  body{background:#000;color:#0f0;font-family:'Courier New';text-align:center;padding-top:15%;overflow:hidden;position:relative;}
-  h1{font-size:80px;animation:a 0.7s infinite;letter-spacing:3px;}
-  .scan{position:absolute;top:0;left:0;width:100%;height:5px;background:#0f0;animation:b 1.5s infinite;}
-  @keyframes a{0%,100%{opacity:1}50%{opacity:0.6}}
-  @keyframes b{0%{top:0}100%{top:100%}}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;color:#0f0;font-family:'Courier New',monospace;text-align:center;overflow:hidden;position:relative;}
+  .container{padding-top:10vh;}
+  h1{font-size:5vw;animation:glitch 0.7s infinite;letter-spacing:5px;text-shadow:0 0 10px #0f0;}
+  p{font-size:2vw;margin:20px 0;animation:pulse 2s infinite;}
+  .scan{position:absolute;top:0;left:0;width:100%;height:8px;background:#0f0;box-shadow:0 0 20px #0f0;animation:scan 1.8s infinite;}
+  .code{font-family:monospace;color:#0f0;opacity:0.8;margin:10px;}
+  @keyframes glitch{0%,100%{text-shadow:0 0 10px #0f0}25%{text-shadow:5px 0 #f00,-5px 0 #00f}50%{text-shadow:-5px 0 #f00,5px 0 #00f}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  @keyframes scan{0%{top:0;opacity:1}100%{top:100%;opacity:0}}
 </style></head>
 <body>
-<h1>HACK TEAM</h1>
-<p>SİTE KABACA ELE GEÇİRİLDİ /MASONLAR</p>
+<div class="container">
+  <h1>HACK TEAM</h1>
+  <p>/MASONLARAGLATIR1907</p>
+  <p class="code">SİTE KABACA ELE GEÇİRİLDİ</p>
+  <p>İSAYA SELAMLAR OLSUN</p>
+</div>
 <div class="scan"></div>
 <script>
-  setInterval(()=>{document.body.style.transform=`rotate(${(Math.random()-0.5)*1}deg)`},150);
+  setInterval(()=>{document.body.style.transform=`rotate(${(Math.random()-0.5)*2}deg)`},100);
+  setInterval(()=>{document.title=['HACK TEAM','KABACA','MASON'][Math.floor(Math.random()*3)]},700);
+  setInterval(()=>{document.querySelector('h1').style.letterSpacing=`${3+Math.random()*5}px`},500);
 </script>
 </body></html>
